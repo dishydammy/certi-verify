@@ -1,6 +1,7 @@
 import express from 'express'
+import { connectToDatabase } from './config/db-config';
 
-
+connectToDatabase()
 const app = express();
 
 
