@@ -1,4 +1,8 @@
-
+import { Route, Routes } from 'react-router';
+import Home from './pages/Home';
+import Login from './pages/authentication/login';
+import Register from './pages/authentication/register';
+import UserDashboard from './pages/authorised_pages/user_dashboard';
 import './App.css'
 
 function App() {
@@ -6,10 +10,13 @@ function App() {
 
   return (
     <>
-      <div>
-        Hidxaxax
-      
-      </div>
+    <Routes>
+      <Route element={<Home />} path='/'/>
+      <Route element={<Login />} path='/login'/>
+      <Route element={<Register />} path='/register'/>
+      <Route element={<UserDashboard />} path='/dashboard'/>
+
+    </Routes>
     </>
   )
 }
