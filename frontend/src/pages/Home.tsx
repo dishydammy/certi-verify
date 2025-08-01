@@ -201,10 +201,10 @@ export default function Home() {
             <p className="text-gray-400 mb-6">
               Combining AI-powered grading with blockchain verification for the future of skill assessment.
             </p>
-            <Button variant="outline" className="text-white border-white hover:bg-white hover:text-gray-900">
+            {/* <Button variant="outline" className="text-white border-white hover:bg-white hover:text-gray-900">
               <Github className="mr-2 h-4 w-4" />
               View on GitHub
-            </Button>
+            </Button> */}
           </div>
           
           <div className="border-t border-gray-700 pt-8">

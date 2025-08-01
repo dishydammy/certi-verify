@@ -7,8 +7,6 @@ import ErrorNotFound from './pages/errornotfound';
 import './App.css'
 
 function App() {
- 
-
   return (
     <>
     
