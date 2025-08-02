@@ -7,14 +7,13 @@ import { validateUserLogin, validateRegisterUser } from "../utils/validation";
 
 export const register = async (req: Request, res: Response) => {
     const { email, name, password } = req.body
+
     const validation = validateRegisterUser({ email, name, password });
-    console.log(validation)
     if (!validation.success) {
-        return res.status(400).json({ errors: validation.error });
+        return res.status(400).json({ errors: validation.error!.issues[0].message });
     }
 
     const userExist = await UserModel.findOne({ email })
-
     if (userExist) return res.status(400).json({ msg: "user already exist" })
 
     const salt = await genSalt(10)
