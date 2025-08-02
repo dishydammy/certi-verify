@@ -2,10 +2,16 @@ import { UserModel } from "../models/user";
 import { Request, Response } from "express";
 import { hash, genSalt, compare } from "bcryptjs";
 import { generateToken, verifyToken } from "../utils/token";
+import { validateUserLogin, validateRegisterUser } from "../utils/validation";
 
 
 export const register = async (req: Request, res: Response) => {
     const { email, name, password } = req.body
+    const validation = validateRegisterUser({ email, name, password });
+    console.log(validation)
+    if (!validation.success) {
+        return res.status(400).json({ errors: validation.error });
+    }
 
     const userExist = await UserModel.findOne({ email })
 
@@ -53,6 +59,10 @@ export const verifyUser = async (req: Request, res: Response) => {
 
 export const login = async (req: Request, res: Response) => {
     const { email, password } = req.body
+    const validation = validateUserLogin({ email, password });
+    if (!validation.success) {
+        return res.status(400).json({ errors: validation.error });
+    }
     const user = await UserModel.findOne({ email })
     if (!user)
         return res.status(400).json({ msg: "Invalid parameter" })
