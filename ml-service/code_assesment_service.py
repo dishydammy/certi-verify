@@ -36,10 +36,8 @@ class GradeRequest(BaseModel):
     test_id: str
     code_answers: List[CodeAnswer]
 
-# AI CLIENT FOR HUGGINGFACE
 class DeepSeekClient:
     def __init__(self):
-        # The openai client will handle the base_url and API key automatically
         if not DEEPSEEK_API_KEY:
             print("⚠️  Warning: DEEPSEEK_API_KEY environment variable not set!")
             self.client = None
@@ -58,7 +56,6 @@ class DeepSeekClient:
         print(f"🔍 Making API request to: {DEEPSEEK_BASE_URL} with model {MODEL}")
 
         try:
-            # Use the official chat.completions.create method
             completion = self.client.chat.completions.create(
                 model=MODEL,
                 messages=[
@@ -67,7 +64,7 @@ class DeepSeekClient:
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
-            # The response is now a structured object
+            
             response_text = completion.choices[0].message.content
             return response_text
 
@@ -78,21 +75,17 @@ class DeepSeekClient:
 
 ai_client = DeepSeekClient()
 
-# JSON PARSING FOR CODE QUESTIONS
 def safe_json_parse_code(response: str, topic: str, difficulty: str, count: int) -> List[Dict]:
     """Safely parse JSON for code questions with fallback"""
     
     print(f"🔍 Raw AI Response for code: {response[:300]}...")
     
-    # Check if response contains an error
     if "AI Error:" in response:
         print(f"❌ AI Error detected, using fallback questions")
         return _create_fallback_code(topic, difficulty, count)
     
-    # Clean the response
     response = response.strip()
     
-    # Remove markdown formatting
     if response.startswith('```json'):
         response = response[7:]
     if response.startswith('```'):
@@ -101,7 +94,6 @@ def safe_json_parse_code(response: str, topic: str, difficulty: str, count: int)
         response = response[:-3]
     response = response.strip()
     
-    # Try to find JSON in the response
     json_start = response.find('[')
     json_end = response.rfind(']') + 1
     
@@ -117,7 +109,6 @@ def safe_json_parse_code(response: str, topic: str, difficulty: str, count: int)
         except json.JSONDecodeError as e:
             print(f"❌ JSON parsing failed: {e}")
     
-    # Try to parse the entire response as JSON
     try:
         parsed = json.loads(response)
         if isinstance(parsed, list) and len(parsed) > 0:
@@ -129,7 +120,6 @@ def safe_json_parse_code(response: str, topic: str, difficulty: str, count: int)
     print(f"⚠️  Falling back to hardcoded code questions")
     return _create_fallback_code(topic, difficulty, count)
 
-# CODE QUESTION GENERATION
 async def generate_code_questions(topic: str, difficulty: str, count: int) -> List[Dict]:
     """Generate coding questions with improved prompts"""
     
@@ -143,7 +133,6 @@ async def generate_code_questions(topic: str, difficulty: str, count: int) -> Li
         
         template = templates.get(topic, templates["JavaScript"])
         
-        # Simple, direct prompt for better AI responses
         prompt = f"""Generate {count} coding questions for {topic} programming.
 
 Return ONLY a JSON array with this exact format:
@@ -165,7 +154,6 @@ JSON array only, no other text:"""
         
         questions = safe_json_parse_code(response, topic, difficulty, count)
         
-        # Validate and fix each question
         valid_questions = []
         for i, q in enumerate(questions[:count]):
             try:
@@ -187,7 +175,6 @@ JSON array only, no other text:"""
                 print(f"❌ Error processing code question {i+1}: {e}")
                 continue
                 
-        # If no valid questions generated, use fallback
         if not valid_questions:
             print("⚠️  No valid code questions generated, using fallbacks")
             return _create_fallback_code(topic, difficulty, count)
@@ -272,7 +259,7 @@ def _create_fallback_code(topic: str, difficulty: str, count: int) -> List[Dict]
     
     result = []
     for i in range(count):
-        q = questions[i % len(questions)]  # Cycle through questions if we need more
+        q = questions[i % len(questions)]
         result.append({
             "id": f"{topic.lower()}_code_{i+1}",
             "question": q["question"], 
@@ -284,7 +271,6 @@ def _create_fallback_code(topic: str, difficulty: str, count: int) -> List[Dict]
     
     return result
 
-# CODE GRADING WITH AI
 async def grade_code(answers: List[CodeAnswer], test_questions: List[Dict]) -> Dict:
     """Grade code questions using AI with comprehensive error handling"""
     if not answers:
@@ -305,7 +291,6 @@ async def grade_code(answers: List[CodeAnswer], test_questions: List[Dict]) -> D
         try:
             print(f"🔍 Grading code for question: {answer.question_id}")
             
-            # Use AI to grade the code with a focused prompt
             prompt = f"""Grade this coding solution from 0-10:
 
 Question: {question['question']}
@@ -328,11 +313,9 @@ Then provide brief feedback explaining the score."""
             
             print(f"🔍 AI grading response: {ai_response[:200]}...")
             
-            # Extract score from AI response
             score = 5.0  # Default middle score
             if "SCORE:" in ai_response.upper():
                 try:
-                    # Find the score line
                     lines = ai_response.split('\n')
                     score_line = next((line for line in lines if 'SCORE:' in line.upper()), None)
                     
@@ -342,9 +325,9 @@ Then provide brief feedback explaining the score."""
                         if '/' in score_text:
                             score = float(score_text.split('/')[0])
                         else:
-                            score = float(score_text.split()[0])  # Take first number
+                            score = float(score_text.split()[0])
                         
-                        score = min(10, max(0, score))  # Clamp between 0-10
+                        score = min(10, max(0, score)) 
                         print(f"✅ Extracted score: {score}/10")
                     
                 except (ValueError, IndexError) as e:
@@ -369,7 +352,7 @@ Then provide brief feedback explaining the score."""
             
         except asyncio.TimeoutError:
             print(f"⏰ Code grading timed out for question {answer.question_id}")
-            points_earned = question["points"] // 2  # Give partial credit
+            points_earned = question["points"] // 2
             total_points += points_earned
             
             feedback.append({
@@ -382,7 +365,7 @@ Then provide brief feedback explaining the score."""
             
         except Exception as e:
             print(f"❌ Code grading failed for question {answer.question_id}: {e}")
-            points_earned = question["points"] // 2  # Give partial credit
+            points_earned = question["points"] // 2
             total_points += points_earned
             
             feedback.append({
@@ -414,7 +397,6 @@ async def generate_code_test(topic: str, difficulty: str, count: int) -> Dict:
     print(f"🚀 Generating code test: {topic} ({difficulty}) - {count} questions")
     
     try:
-        # Generate code questions with timeout
         code_questions = await asyncio.wait_for(
             generate_code_questions(topic, difficulty, count), 
             timeout=90.0  # Longer timeout for code generation
@@ -581,14 +563,5 @@ async def health_check():
         }
 
 if __name__ == "__main__":
-    print("🚀 Starting HashProof Code Assessment System...")
-    print(f"📍 Open: http://localhost:8002")
-    print(f"📋 Sample test: http://localhost:8002/sample_code_test")
-    print(f"📖 API Docs: http://localhost:8002/docs")
-    print(f"🤖 AI Model: {MODEL}")
-    print(f"⚡ Health check: http://localhost:8002/health")
-    
-    if not DEEPSEEK_API_KEY:
-        print("⚠️  Warning: DEEPSEEK_API_KEY environment variable not set!")
-    
-    uvicorn.run(app, host="127.0.0.1", port=8002, log_level="info")
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
