@@ -36,11 +36,8 @@ class GradeRequest(BaseModel):
     test_id: str
     mcq_answers: List[MCQAnswer]
 
-# AI CLIENT FOR HUGGINGFACE
-# AI CLIENT FOR HUGGINGFACE (using openai library)
 class DeepSeekClient:
     def __init__(self):
-        # The openai client will handle the base_url and API key automatically
         if not DEEPSEEK_API_KEY:
             print("⚠️  Warning: DEEPSEEK_API_KEY environment variable not set!")
             self.client = None
@@ -59,7 +56,6 @@ class DeepSeekClient:
         print(f"🔍 Making API request to: {DEEPSEEK_BASE_URL} with model {MODEL}")
 
         try:
-            # Use the official chat.completions.create method
             completion = self.client.chat.completions.create(
                 model=MODEL,
                 messages=[
@@ -68,7 +64,6 @@ class DeepSeekClient:
                 temperature=temperature,
                 max_tokens=max_tokens,
             )
-            # The response is now a structured object
             response_text = completion.choices[0].message.content
             return response_text
 
@@ -79,7 +74,6 @@ class DeepSeekClient:
 
 ai_client = DeepSeekClient()
 
-# JSON PARSING WITH ROBUST ERROR HANDLING
 def safe_json_parse(response: str, topic: str, difficulty: str, count: int) -> List[Dict]:
     """Safely parse JSON with comprehensive error handling"""
     
@@ -90,10 +84,8 @@ def safe_json_parse(response: str, topic: str, difficulty: str, count: int) -> L
         print(f"❌ AI Error detected, using fallback questions")
         return _create_fallback_mcq(topic, difficulty, count)
     
-    # Clean the response
     response = response.strip()
     
-    # Remove markdown formatting
     if response.startswith('```json'):
         response = response[7:]
     if response.startswith('```'):
@@ -102,7 +94,6 @@ def safe_json_parse(response: str, topic: str, difficulty: str, count: int) -> L
         response = response[:-3]
     response = response.strip()
     
-    # Try to find JSON in the response
     json_start = response.find('[')
     json_end = response.rfind(']') + 1
     
@@ -118,7 +109,6 @@ def safe_json_parse(response: str, topic: str, difficulty: str, count: int) -> L
         except json.JSONDecodeError as e:
             print(f"❌ JSON parsing failed: {e}")
     
-    # Try to parse the entire response as JSON
     try:
         parsed = json.loads(response)
         if isinstance(parsed, list) and len(parsed) > 0:
@@ -135,7 +125,6 @@ async def generate_mcq_questions(topic: str, difficulty: str, count: int) -> Lis
     """Generate MCQ questions with improved prompts"""
     
     try:
-        # Simple, direct prompt for better AI responses
         prompt = f"""Generate {count} multiple choice questions about {topic} programming.
 
 Return ONLY a JSON array with this exact format:
@@ -163,7 +152,6 @@ JSON array only, no other text:"""
                 question_id = f"{topic.lower()}_mcq_{i+1}"
                 points = q.get("points", 2 if difficulty == "beginner" else 3 if difficulty == "intermediate" else 4)
                 
-                # Fix options format if needed
                 options = q.get("options", {})
                 if isinstance(options, list):
                     # Convert list to dict
@@ -174,7 +162,6 @@ JSON array only, no other text:"""
                         option_dict[letters[idx]] = clean_opt
                     options = option_dict
                 
-                # Ensure we have all required options
                 required_keys = ["A", "B", "C", "D"]
                 if not all(key in options for key in required_keys):
                     print(f"⚠️  Question {i+1} missing required options, skipping")
@@ -195,7 +182,6 @@ JSON array only, no other text:"""
                 print(f"❌ Error processing MCQ question {i+1}: {e}")
                 continue
                 
-        # If no valid questions generated, use fallback
         if not valid_questions:
             print("⚠️  No valid questions generated, using fallbacks")
             return _create_fallback_mcq(topic, difficulty, count)
@@ -309,7 +295,7 @@ def _create_fallback_mcq(topic: str, difficulty: str, count: int) -> List[Dict]:
     
     result = []
     for i in range(count):
-        q = questions[i % len(questions)]  # Cycle through questions if we need more
+        q = questions[i % len(questions)] 
         result.append({
             "id": f"{topic.lower()}_mcq_{i+1}",
             "question": q["question"],
@@ -331,7 +317,6 @@ async def grade_mcq(answers: List[MCQAnswer], test_questions: List[Dict]) -> Dic
     total_points = 0
     feedback = []
     
-    # Create lookup dict for questions
     question_lookup = {q["id"]: q for q in test_questions}
     
     for answer in answers:
@@ -369,7 +354,6 @@ async def generate_mcq_test(topic: str, difficulty: str, count: int) -> Dict:
     print(f"🚀 Generating MCQ test: {topic} ({difficulty}) - {count} questions")
     
     try:
-        # Generate MCQ questions with timeout
         mcq_questions = await asyncio.wait_for(
             generate_mcq_questions(topic, difficulty, count), 
             timeout=60.0
@@ -536,14 +520,5 @@ async def health_check():
         }
 
 if __name__ == "__main__":
-    print("🚀 Starting HashProof MCQ Assessment System...")
-    print(f"📍 Open: http://localhost:8001")
-    print(f"📋 Sample test: http://localhost:8001/sample_mcq_test")
-    print(f"📖 API Docs: http://localhost:8001/docs")
-    print(f"🤖 AI Model: {MODEL}")
-    print(f"⚡ Health check: http://localhost:8001/health")
-    
-    if not DEEPSEEK_API_KEY:
-        print("⚠️  Warning: DEEPSEEK_API_KEY environment variable not set!")
-    
-    uvicorn.run(app, host="127.0.0.1", port=8001, log_level="info")
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
