@@ -1,23 +1,23 @@
-* Hashproof ML System - Backend Integration Guide
+# Hashproof ML System - Backend Integration Guide
 
-** Overview
-The ML System is a simple API service that generates JavaScript tests and grades student submissions using AI. It runs as a separate service that your backend can call to handle all assessment logic.
+## Overview
+The ML System is a simple API service that generates tests for programming languages and grades student submissions using AI. It runs as a separate service that can be called to handle all assessments logic.
 
 What it does:
 
-✅ Generates JavaScript tests (MCQ, Code, Text questions)
+✅ Generates tests (MCQ, Code) for a specified programming language (e.g Python, JavaScript)
 ✅ Grades student answers automatically
 ✅ Returns pass/fail status for NFT minting
 ✅ Provides detailed feedback and scores
 
 
-** API Endpoints
-
-All requests should be POST requests with a Content-Type: application/json header.
+## API Endpoints
 
 1. Generate a Code Test
 > Endpoint: POST /generate_code_test
+ 
 > Purpose: Ask the AI to generate a set of coding questions.
+
 > Request Body (JSON):
 
 ```
@@ -29,6 +29,7 @@ All requests should be POST requests with a Content-Type: application/json heade
 ```
 
 > Response:
+
 ```
 {
   "test_id": "848d7d9f-d31e-436f-9972-23f2b87c7b8c",
@@ -54,7 +55,9 @@ All requests should be POST requests with a Content-Type: application/json heade
 
 2. Grade a Code Test
 > Endpoint: POST /grade_code_test
+
 > Purpose: Submit a student's answers to be graded by the AI.
+
 > Request Body (JSON):
 
 ```
@@ -72,7 +75,9 @@ All requests should be POST requests with a Content-Type: application/json heade
 ```
 
 > How it Works: The service uses the test_id to retrieve the original questions from our in-memory TEST_STORAGE. It then sends the student's code and the original question to the AI for grading.
+
 > Response (JSON): The final score and detailed feedback.
+
 ```
 {
   "student_id": "student-123",
@@ -93,6 +98,7 @@ All requests should be POST requests with a Content-Type: application/json heade
   ]
 }
 ```
+
 > Error Handling: The service is designed with fallbacks. If the model is down or times out, it returns a 500 status with a clear error message.
 
 2. Grade Test
@@ -157,8 +163,11 @@ Response:
 
 3. Generate an MCQ Test
 > Endpoint: POST /generate_mcq_test
+
 > Purpose: Generate multiple-choice questions for a given topic and difficulty.
+
 > Request Body (JSON):
+
 ```
 {
   "difficulty": "beginner",
@@ -168,6 +177,7 @@ Response:
 ```
 
 > Response (JSON): The test data, including the correct answers and explanations.
+
 ```
 {
   "test_id": "a1b2c3d4-e5f6-7890-abcd-ef0123456789",
@@ -197,8 +207,11 @@ Response:
 
 4. Grade an MCQ Test
 > Endpoint: POST /grade_mcq_test
+
 > Purpose: Grade a student's multiple-choice answers against the stored correct answers.
+
 > Request Body (JSON):
+
 ```
 {
   "student_id": "student-123",
@@ -214,7 +227,9 @@ Response:
 ```
 
 > How it Works: This service retrieves the stored test data using the test_id and performs a simple check of the student's answers against the correct ones. It's a fast, non-AI grading process.
+
 > Response (JSON): The final score and feedback for each question.
+
 ```
 {
   "student_id": "student-123",
